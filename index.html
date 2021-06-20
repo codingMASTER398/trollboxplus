@@ -25,6 +25,7 @@
     
   </script>
   <script src="https://www.windows93.net/c/libs/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.2/math.js"></script>
   <script type="text/javascript" src="https://www.windows93.net/trollbox/suncalc.js"></script>
   <script type="text/javascript" src="https://www.windows93.net/trollbox/he.js"></script>
   <script type="text/javascript" src="https://www.windows93.net/trollbox/zalgo.js"></script>
@@ -579,8 +580,11 @@
       "––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––--–\n"+
       "| COMMANDS:                                                                         \n"+
       "| /badwords [on/off]     Trollbox+ bad word filter                                  \n"+
+      "| /repeat [on/off]       Allows you to repeat your last message                     \n"+
       "| /spamfilter [on/off]   Trollbox+ spam filter                                      \n"+
       "| /classiclook [on/off]  Change between the Trollbox+ look and the classic look     \n"+
+      "| /math [expression]     Do some epik math                                          \n"+
+      "| /time                  Get the current time                                       \n"+
       "| /color htmlColor       eg: /color #C3FF00                                         \n"+
       "| /lorem numberOfWords   eg: /lorem 10                                              \n"+
       "| /b string              eg: /b hello world                                         \n"+
@@ -649,6 +653,7 @@
     var badfilter = $store.get('.config/trollbox/badwords') || false;
     var spamfilter = $store.get('.config/trollbox/spam') || true;
     var classic = $store.get('.config/trollbox/classicmode') || false
+    var repeat = $store.get('.config/trollbox/repeat') || false
     if(classic){
       var link = document.createElement("link");
       link.rel = "stylesheet";
@@ -761,7 +766,7 @@
     }
     return text;
   }
-
+  var lastmessage = ""
   function escapeRegExp(str) {
     return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
   }
@@ -809,12 +814,32 @@
       if (style == undefined) {style=''};
 
       var cmd = getCmd(msg);
+      if(repeat){
+        if(lastmessage == msg){
+          msg = msg+"."
+          lastmessage = msg
+        }else{
+          lastmessage = msg
+        }
+      }
 
       if (typeof msg === 'string') {
 
         if (msg.startsWith('/sin')) {
           sin=true;
           $store.set('.config/trollbox/sin', sin);
+        }
+        if(msg == "/time"){
+            try{
+              var a = new Date().toLocaleString()
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: String(a) };
+              printMsg(dada);
+            }catch{
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Error getting the epik time" };
+              printMsg(dada);
+            }
+            
+            return;
         }
 
         if (cmd) {
@@ -824,7 +849,8 @@
             $store.set('.config/trollbox/color', color);
             socket.emit('user joined', pseudo, color, style, pass);
             return;
-          }    
+          }
+          
 
           if (cmd.cmd === 'badwords') {
             if (cmd.val=='on') {
@@ -859,7 +885,7 @@
           if (cmd.cmd === 'classiclook') {
             if (cmd.val=='on') {
                $store.set('.config/trollbox/classicmode', true);
-              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Classic look: ON Changes will be made once you restart trollbox+"  };
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Classic look: ON. Changes will be made once you restart trollbox+"  };
               printMsg(dada);
             }
             if (cmd.val=='off') {
@@ -868,7 +894,37 @@
               printMsg(dada);
             }
             return;
-          }       
+          }     
+          if (cmd.cmd === 'repeat') {
+            if (cmd.val=='on') {
+              repeat = true
+               $store.set('.config/trollbox/repeat', true);
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Repeat: ON"  };
+              printMsg(dada);
+            }
+            if (cmd.val=='off') {
+              repeat = false
+               $store.set('.config/trollbox/repeat', false);
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Repeat: OFF" };
+              printMsg(dada);
+            }
+            return;
+          }   
+          if (cmd.cmd === 'math') {
+            try{
+              var a = math.evaluate(cmd.val)
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: String(a) };
+              printMsg(dada);
+            }catch{
+              dada = { date: Date.now(), nick: "[Trollbox+]", color: "green", style: "opacity: 0.7;", home: 'local', msg: "Error doing the epik math" };
+              printMsg(dada);
+            }
+            
+            return;
+          }  
+           
+          
+          
 
           if (cmd.cmd === 'say') {
             msg = '/say '+pitch+':'+rate+':'+voice+' '+cmd.val;
